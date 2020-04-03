@@ -1,0 +1,3 @@
+prometheus-client
+radosgw-admin==1.7.1
+python-daemon
