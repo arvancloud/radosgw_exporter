@@ -118,7 +118,7 @@ def radosgw_metrics():
     global radosgw_scrap_timeout_metric
 
     # set help and type date for metrics
-    radosgw_bucket_total_metric = Gauge('radosgw_bucket_total', 'Total number of buckets', ['owner'])
+    radosgw_bucket_total_metric = Gauge('radosgw_bucket_total', 'Total number of buckets')
     radosgw_bucket_owner_metric = Gauge('radosgw_bucket_owner', 'Name of Owner(UID) in string', ['owner'])
     radosgw_bucket_num_object_metric = Gauge('radosgw_bucket_num_object_total', 'Number of Object in bucket', ['owner', 'name'])
     radosgw_bucket_size_metric = Gauge('radosgw_bucket_size', 'Size of bucket in bytes', ['owner', 'name'])
@@ -157,9 +157,12 @@ def radosgw_collector():
 
             # count buckets
             bucket_total += 1
-            radosgw_bucket_total_metric.labels(bucket_owner).set(bucket_total)
+            radosgw_bucket_total_metric.set(bucket_total)
 
-            # set usage metrics of buckets if exist
+            # set bucket name variable to use in metrics
+            bucket_name = bucket.name
+
+            # set usage metrics of buckets
             if bucket.usage:
                 bucket_num_objects = bucket.usage.num_objects
                 bucket_size = bucket.usage.size
@@ -169,15 +172,25 @@ def radosgw_collector():
                 bucket_size_utilized = bucket.usage.size_utilized
                 bucket_size_kb_utilized = bucket.usage.size_kb_utilized
                 # bucket_bucket = bucket.bucket
-                bucket_name = bucket.name
 
-                radosgw_bucket_num_object_metric.labels(bucket_owner, bucket_name).set(bucket_num_objects)
-                radosgw_bucket_size_metric.labels(bucket_owner, bucket_name).set(bucket_size)
-                radosgw_bucket_size_kb_metric.labels(bucket_owner, bucket_name).set(bucket_size_kb)
-                radosgw_bucket_size_actual_metric.labels(bucket_owner, bucket_name).set(bucket_size_actual)
-                radosgw_bucket_size_kb_actual_metric.labels(bucket_owner, bucket_name).set(bucket_size_kb_actual)
-                radosgw_bucket_size_utilized_metric.labels(bucket_owner, bucket_name).set(bucket_size_utilized)
-                radosgw_bucket_size_kb_utilized_metric.labels(bucket_owner, bucket_name).set(bucket_size_kb_utilized)
+            # if usage not exist, and just bucket is exist, set usage parameters to 0
+            else:
+                bucket_num_objects = 0
+                bucket_size = 0
+                bucket_size_kb = 0
+                bucket_size_kb_actual = 0
+                bucket_size_actual = 0
+                bucket_size_utilized = 0
+                bucket_size_kb_utilized = 0
+
+            # set data to metrics
+            radosgw_bucket_num_object_metric.labels(bucket_owner, bucket_name).set(bucket_num_objects)
+            radosgw_bucket_size_metric.labels(bucket_owner, bucket_name).set(bucket_size)
+            radosgw_bucket_size_kb_metric.labels(bucket_owner, bucket_name).set(bucket_size_kb)
+            radosgw_bucket_size_actual_metric.labels(bucket_owner, bucket_name).set(bucket_size_actual)
+            radosgw_bucket_size_kb_actual_metric.labels(bucket_owner, bucket_name).set(bucket_size_kb_actual)
+            radosgw_bucket_size_utilized_metric.labels(bucket_owner, bucket_name).set(bucket_size_utilized)
+            radosgw_bucket_size_kb_utilized_metric.labels(bucket_owner, bucket_name).set(bucket_size_kb_utilized)
 
 
     except radosgw.exception.NoSuchBucket as err:
