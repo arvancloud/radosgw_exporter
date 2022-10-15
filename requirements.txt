@@ -1,3 +1,6 @@
-prometheus-client
-radosgw-admin==1.7.1
-python-daemon
+boto==2.49.0
+docutils==0.19
+lockfile==0.12.2
+prometheus-client==0.15.0
+python-daemon==2.3.1
+radosgw-admin==1.7.2
