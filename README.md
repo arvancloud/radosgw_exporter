@@ -2,17 +2,48 @@
 ## Introduction
 This is Rados Gateway Exporter written in python3 for prometheus.
 You can run it in simple linux or container.
-I've check some repos in github and gitlab, but they have some problems with ceph and radosgw.
+I've check some repos in GitHub and Gitlab, but they have some problems with ceph and radosgw.
 
 ## Requirements
-This script needs prometheus-client, radosgw-admin (1.7.1) and python-daemon as modules, and I wrote it with Python 3.8.2.
+This script needs prometheus-client, radosgw-admin, python-daemon, and some other libraries as modules, so I wrote it with Python 3.8.2.
 This is `requirements.txt` :
 ```bash
-prometheus-client
-radosgw-admin==1.7.1
-python-daemon
+boto==2.49.0
+docutils==0.19
+lockfile==0.12.2
+prometheus-client==0.15.0
+python-daemon==2.3.1
+radosgw-admin==1.7.2
 ```
-Also you need a S3 user to get data from rados gateway.
+## Preparing environment
+Also you need a S3 user to get data from rados gateway. 
+
+For creating a suitable rados user, use the following instructions:
+
+In case of not having radosgw-admin command, install the following package:
+```bash
+pip install radosgw-admin
+```
+Then create rados user with these caps:
+```json
+"caps": [
+   { "type": "buckets",
+     "perm": "read" },
+   { "type": "usage",
+     "perm": "read" },
+   { "type": "metadata",
+     "perm": "read" },
+   { "type": "users",
+     "perm": "read" }
+]
+```
+By using these commands:
+```commandline
+radosgw-admin caps add --uid <USER_ID> --caps "usage=read"
+radosgw-admin caps add --uid <USER_ID> --caps "metadata=read"
+radosgw-admin caps add --uid <USER_ID> --caps "buckets=read"
+radosgw-admin caps add --uid <USER_ID> --caps "users=read"
+```
 
 ## Usage
 ### Docker
@@ -20,23 +51,33 @@ Also you need a S3 user to get data from rados gateway.
 docker run \
   --name radosgw_exporter \
   -it \
-  -p 127.0.0.1:9242:9242 \
-  -e ACCESS_KEY='put-your-access-key' \
-  -e SECRET_KEY='put-your-secret-key' \
-  -e HOST='put-your-radosgw-address' \
-  -e PORT='put-your-radosgw-port' \
+  -p 9242:9242 \
+  -e ACCESS_KEY='PUT_YOUR_ACCESS_KEY' \
+  -e SECRET_KEY='PUT_YOUR_SECRET_KEY' \
+  -e HOST='PUT_YOUR_RADOSGW_ADDRESS' \
+  -e PORT='PUT_YOUR_RADOSGW_PORT' \
   moghaddas/radosgw_exporter
 ```
 
-### Simple
+### Command Line Interface
+First, clone the repository:
 ```bash
 git clone https://github.com/arvancloud/radosgw_exporter
+```
+Then go to the directory
+```bash
 cd radosgw_exporter
-
+```
+Then install the required packages
+```bash
 pip install -r requirements.txt
-
-
+```
+For printing usage info, use the following command:
+```bash
 ./radosgw_exporter.py -h
+```
+The output should be like this:
+```bash
 usage: radosgw_exporter.py [-h] [-H HOST] [-p PORT] [-a ACCESS_KEY] [-s SECRET_KEY] [--insecure] [--debug] [-d] [--signature SIGNATURE] [-t SCRAP_TIMEOUT] [--expose-port EXPOSE_PORT] [--expose-address EXPOSE_ADDRESS]
 
 optional arguments:
@@ -58,6 +99,14 @@ optional arguments:
                         Exporter port (default 9242)
   --expose-address EXPOSE_ADDRESS
                         Exporter address (default 0.0.0.0)
-
+```
+And here is an example for using this app:
+```bash 
 ./radosgw_exporter.py -H RADOSGW-HOST -p RADOSGW-PORT -a ACCESS_KEY -s SECRET_KEY --insecure --scrap-timeout 5 --expose-address 127.0.0.1
 ```
+
+
+# links
+https://github.com/valerytschopp/python-radosgw-admin
+
+https://github.com/ceph/ceph/blob/master/doc/radosgw/compression.rst
