@@ -12,41 +12,15 @@ from prometheus_client import start_http_server
 from prometheus_client import Gauge
 from prometheus_client import Summary
 
-
-"""
-# base
-pip install radosgw-admin
-
-# create rados user with this caps
-"caps": [
-   { "type": "buckets",
-     "perm": "*" },
-   { "type": "usage",
-     "perm": "read" },
-   { "type": "metadata",
-     "perm": "read" },
-   { "type": "users",
-     "perm": "*" }
-]
-
-radosgw-admin caps add --uid <USER_ID> --caps "buckets=read,write"
-radosgw-admin caps add --uid <USER_ID> --caps "users=read,write"
-
-
-# exporter
-pip install prometheus_client
-
-# links
-https://github.com/valerytschopp/python-radosgw-admin
-https://github.com/ceph/ceph/blob/master/doc/radosgw/compression.rst
-"""
-
 # call argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-H', '--host', help='Host ip or url without http/https and port (required, env HOST)',default=os.environ.get('HOST', None), required=False)
-parser.add_argument('-p', '--port', help='Port address (default 443, env PORT)',default=os.environ.get('PORT', 443))
-parser.add_argument('-a', '--access-key', help='Access Key of S3 (required, env ACCESS_KEY)', default=os.environ.get('ACCESS_KEY', None), required=False)
-parser.add_argument('-s', '--secret-key', help='Secret Key of S3 (required, env SECRET_KEY)', default=os.environ.get('SECRET_KEY', None), required=False)
+parser.add_argument('-H', '--host', help='Host ip or url without http/https and port (required, env HOST)',
+                    default=os.environ.get('HOST', None), required=False)
+parser.add_argument('-p', '--port', help='Port address (default 443, env PORT)', default=os.environ.get('PORT', 443))
+parser.add_argument('-a', '--access-key', help='Access Key of S3 (required, env ACCESS_KEY)',
+                    default=os.environ.get('ACCESS_KEY', None), required=False)
+parser.add_argument('-s', '--secret-key', help='Secret Key of S3 (required, env SECRET_KEY)',
+                    default=os.environ.get('SECRET_KEY', None), required=False)
 parser.add_argument('--insecure', help='Disable ssl/tls verification (default true)', default=True, action='store_true')
 parser.add_argument('--debug', help='Enable debug mode', action='store_true')
 parser.add_argument('-d', '--daemon', help='Enable daemon mode (default false)', action='store_true', default=False)
@@ -72,6 +46,7 @@ expose_port = int(args.expose_port)
 # create a metric to track time spent and requests made.
 REQUEST_TIME = Summary('request_processing_seconds', 'Time spent processing request')
 
+
 # check args
 def radosgw_args():
     # check host
@@ -79,7 +54,7 @@ def radosgw_args():
         print("host variable doesn't exist.\n")
         parser.print_help(sys.stderr)
         sys.exit(1)
-    
+
     # check access key
     if not access_key:
         print("access-key doesn't exist.\n")
@@ -94,9 +69,9 @@ def radosgw_args():
 
     # check expose address and port
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result = sock.connect_ex((expose_address,expose_port))
+    result = sock.connect_ex((expose_address, expose_port))
     if result == 0:
-        print(f"expose address or port aren't usefull: {expose_address}:{expose_port}")
+        print(f"expose address or port aren't useful: {expose_address}:{expose_port}")
         print(f"use other address port\n")
         parser.print_help(sys.stderr)
         sys.exit(1)
@@ -120,13 +95,21 @@ def radosgw_metrics():
     # set help and type date for metrics
     radosgw_bucket_total_metric = Gauge('radosgw_bucket_total', 'Total number of buckets')
     radosgw_bucket_owner_metric = Gauge('radosgw_bucket_owner', 'Name of Owner(UID) in string', ['owner'])
-    radosgw_bucket_num_object_metric = Gauge('radosgw_bucket_num_object_total', 'Number of Object in bucket', ['owner', 'name'])
+    radosgw_bucket_num_object_metric = Gauge('radosgw_bucket_num_object_total', 'Number of Object in bucket',
+                                             ['owner', 'name'])
     radosgw_bucket_size_metric = Gauge('radosgw_bucket_size', 'Size of bucket in bytes', ['owner', 'name'])
     radosgw_bucket_size_kb_metric = Gauge('radosgw_bucket_size_kb', 'Size of bucket in kilobytes', ['owner', 'name'])
-    radosgw_bucket_size_actual_metric = Gauge('radosgw_bucket_size_actual', 'Actual size of bucket in bytes', ['owner', 'name'])
-    radosgw_bucket_size_kb_actual_metric = Gauge('radosgw_bucket_size_kb_actual', 'Actual size of bucket in kilobytes', ['owner', 'name'])
-    radosgw_bucket_size_utilized_metric = Gauge('radosgw_bucket_size_utilized', 'Utilized size (total size of compressed data) of bucket in bytes', ['owner', 'name'])
-    radosgw_bucket_size_kb_utilized_metric = Gauge('radosgw_bucket_size_kb_utilized', 'Utilized size (total size of compressed data) of bucket in kilobytes', ['owner', 'name'])
+    radosgw_bucket_size_actual_metric = Gauge('radosgw_bucket_size_actual', 'Actual size of bucket in bytes',
+                                              ['owner', 'name'])
+    radosgw_bucket_size_kb_actual_metric = Gauge('radosgw_bucket_size_kb_actual', 'Actual size of bucket in kilobytes',
+                                                 ['owner', 'name'])
+    radosgw_bucket_size_utilized_metric = Gauge('radosgw_bucket_size_utilized',
+                                                'Utilized size (total size of compressed data) of bucket in bytes',
+                                                ['owner', 'name'])
+    radosgw_bucket_size_kb_utilized_metric = Gauge('radosgw_bucket_size_kb_utilized',
+                                                   'Utilized size (total size of compressed data) of bucket in '
+                                                   'kilobytes',
+                                                   ['owner', 'name'])
     radosgw_scrap_timeout_metric = Gauge('radosgw_scrap_timeout_seconds', 'Scrap interval in seconds')
 
 
@@ -135,16 +118,24 @@ def radosgw_metrics():
 def radosgw_collector():
     try:
         # create connection to radosgw
-        rgwadmin = radosgw.connection.RadosGWAdminConnection(host = host,
-                                                                port = port,
-                                                                access_key = access_key,
-                                                                secret_key = secret_key,
-                                                                is_secure = not is_secure,
-                                                                debug = debug,
-                                                                aws_signature = signature)
-    
+        try:
+            rgwadmin = radosgw.connection.RadosGWAdminConnection(host=host,
+                                                                 port=port,
+                                                                 access_key=access_key,
+                                                                 secret_key=secret_key,
+                                                                 is_secure=not is_secure,
+                                                                 debug=debug,
+                                                                 aws_signature=signature)
+        except Exception as e:
+            print(e)
+            return 1
+
         # get buckets and details of them
-        buckets = rgwadmin.get_buckets()
+        try:
+            buckets = rgwadmin.get_buckets()
+        except Exception as e:
+            print(e)
+            return 1
 
         # total bucket counter
         bucket_total = 0
@@ -192,15 +183,18 @@ def radosgw_collector():
             radosgw_bucket_size_utilized_metric.labels(bucket_owner, bucket_name).set(bucket_size_utilized)
             radosgw_bucket_size_kb_utilized_metric.labels(bucket_owner, bucket_name).set(bucket_size_kb_utilized)
 
+    except radosgw.exception.NoSuchBucket as e:
+        print(f"problem occurred: {e}")
 
-    except radosgw.exception.NoSuchBucket as err:
-        print(f"problem occured: {err}")
 
-
-# main fucntion of script
+# main function of script
 def radosgw_runner():
     try:
-        start_http_server(expose_port, expose_address)
+        try:
+            start_http_server(expose_port, expose_address)
+        except Exception as e:
+            print(e)
+            return 1
         print(f"exporter start listening on {expose_address}:{expose_port}")
         print(f"scrap every {scrap_timeout} seconds")
         print(f"debug mode is {debug}\n")
@@ -209,10 +203,10 @@ def radosgw_runner():
             print(f"exporter connect to {host}:{port}")
             print(f"insecure option is {is_secure}")
 
-        # call fuction of metric creation
+        # call function of metric creation
         radosgw_metrics()
         radosgw_scrap_timeout_metric.set(scrap_timeout)
-    
+
         while True:
             if debug:
                 now = datetime.datetime.now()
@@ -227,20 +221,21 @@ def radosgw_runner():
                 print(f"start timeout for {scrap_timeout}")
 
             time.sleep(scrap_timeout)
-    except :
-        print(f"problem occured")
+    except Exception as e:
+        print(f"problem occurred")
+        print(e)
 
 
 # main
 if __name__ == "__main__":
-    # check radosgs args
+    # check radosgw args
     radosgw_args()
 
     if is_daemon:
         with daemon.DaemonContext(
-            working_directory='/tmp',
-            umask=0o002
-            ) as context:
-                radosgw_runner()
+                working_directory='/tmp',
+                umask=0o002
+        ) as context:
+            radosgw_runner()
     else:
         radosgw_runner()

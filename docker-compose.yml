@@ -1,0 +1,13 @@
+version: !!str 3.9
+
+services:
+  node-exporter:
+    image: moghaddas/radosgw_exporter
+    ports:
+      - "9242:9242"
+    restart: always
+    environment:
+      - ACCESS_KEY=PUT_YOUR_ACCESS_KEY
+      - SECRET_KEY=PUT_YOUR_SECRET_KEY
+      - HOST=PUT_YOUR_RADOSGW_ADDRESS
+      - PORT=PUT_YOUR_RADOSGW_PORT
